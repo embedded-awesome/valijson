@@ -30,3 +30,7 @@
 	path = thirdparty/JSON-Schema-Test-Suite
 	url = https://github.com/json-schema-org/JSON-Schema-Test-Suite.git
 	shallow = true
+[submodule "thirdparty/rapidyaml"]
+	path = thirdparty/rapidyaml
+	url = https://github.com/embedded-awesome/rapidyaml.git
+	branch = yakka
