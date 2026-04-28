@@ -11,6 +11,7 @@ option(valijson_BUILD_EXAMPLES "Build valijson examples." FALSE)
 option(valijson_BUILD_TESTS "Build valijson test suite." FALSE)
 option(valijson_EXCLUDE_BOOST "Exclude Boost when building test suite." FALSE)
 option(valijson_USE_EXCEPTIONS "Use exceptions in valijson and included libs." TRUE)
+option(valijson_USE_RAPIDYAML "Build with RapidYAML (ryml) support." FALSE)
 
 option(valijson_USE_BOOST_REGEX "Use boost::regex instead of std::regex internally." FALSE)
 mark_as_advanced(valijson_USE_BOOST_REGEX)
@@ -93,6 +94,14 @@ add_library(yamlcpp ${yamlcpp_SOURCES})
 target_include_directories(yamlcpp SYSTEM PRIVATE thirdparty/yamlcpp/include)
 set_target_properties(yamlcpp PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/thirdparty/yamlcpp)
 
+# RapidYAML library - must be added BEFORE the global include_directories() call
+# to prevent our thirdparty include paths from leaking into ryml's
+# INTERFACE_INCLUDE_DIRECTORIES (which CMake rejects for source-tree paths).
+if(valijson_USE_RAPIDYAML)
+    set(RYML_DEFAULT_CALLBACK_USES_EXCEPTIONS ${valijson_USE_EXCEPTIONS} CACHE BOOL "" FORCE)
+    add_subdirectory(thirdparty/rapidyaml)
+endif()
+
 # Not all of these are required for examples build it doesn't hurt to include them
 include_directories(include SYSTEM
     thirdparty/googletest/include
@@ -135,6 +144,11 @@ if(valijson_BUILD_TESTS)
     )
 
     set(TEST_LIBS gtest gtest_main jsoncpp json11 yamlcpp)
+
+    if(valijson_USE_RAPIDYAML)
+        list(APPEND TEST_SOURCES tests/test_rapidyaml_adapter.cpp)
+        list(APPEND TEST_LIBS ryml)
+    endif()
 
     if(Boost_FOUND)
         include_directories(${Boost_INCLUDE_DIRS})
