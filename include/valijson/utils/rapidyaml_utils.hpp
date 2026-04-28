@@ -28,27 +28,16 @@ inline bool loadDocument(const std::string &path, ryml::Tree &document)
     }
 
 #if VALIJSON_USE_EXCEPTIONS
-    // Install a per-tree error callback that throws instead of aborting.
-    // The callback must not return, so we throw std::runtime_error.
-    struct ErrorState {
-        bool failed = false;
-        std::string message;
-    } errorState;
-
+    // Install per-tree error callbacks that throw instead of aborting.
+    // Both callbacks are non-capturing, so they decay to plain function pointers
+    // as required by ryml::Callbacks.
     ryml::Callbacks cb;
-    cb.set_error_basic([](ryml::csubstr msg, ryml::ErrorDataBasic const&, void *user_data) {
-        auto *state = static_cast<ErrorState *>(user_data);
-        state->failed = true;
-        state->message.assign(msg.str, msg.len);
-        throw std::runtime_error(state->message);
+    cb.set_error_basic([](ryml::csubstr msg, ryml::ErrorDataBasic const&, void *) {
+        throw std::runtime_error(std::string(msg.str, msg.len));
     });
-    cb.set_error_parse([](ryml::csubstr msg, ryml::ErrorDataParse const&, void *user_data) {
-        auto *state = static_cast<ErrorState *>(user_data);
-        state->failed = true;
-        state->message.assign(msg.str, msg.len);
-        throw std::runtime_error(state->message);
+    cb.set_error_parse([](ryml::csubstr msg, ryml::ErrorDataParse const&, void *) {
+        throw std::runtime_error(std::string(msg.str, msg.len));
     });
-    cb.set_user_data(&errorState);
     document = ryml::Tree(cb);
 
     try {
